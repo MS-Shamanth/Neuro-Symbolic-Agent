@@ -1,0 +1,16 @@
+flowchart TD
+    GB(["Goal Buffer"])
+    S0["Step 0 (accepted): grounded-inference (seeded)"]
+    S1["Step 1 (accepted): grounded-inference (seeded)"]
+    S2["Step 2 (accepted): grounded-inference (seeded)"]
+    T(["Verified Output"])
+    GB --> S0
+    S0 --> S1
+    S1 --> S2
+    S2 --> T
+    classDef accepted fill:#d4f7d4,stroke:#2e7d32,color:#000;
+    classDef rejected fill:#f7d4d4,stroke:#c62828,color:#000;
+    classDef repaired fill:#fff3c4,stroke:#f9a825,color:#000;
+    class S0 accepted;
+    class S1 accepted;
+    class S2 accepted;

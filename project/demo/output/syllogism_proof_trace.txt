@@ -1,0 +1,8 @@
+Proof Trace
+  Step 0: accepted [rule: modus-ponens]
+      text: {"logic_form": "all_cats_are_mammals", "predicates": {"status": "entailed"}}
+  Step 1: accepted [rule: modus-ponens]
+      text: {"logic_form": "all_mammals_are_animals", "predicates": {"status": "entailed"}}
+  Step 2: accepted [rule: modus-ponens]
+      text: {"logic_form": "cats_are_animals", "predicates": {"status": "entailed"}}
+Termination: goal-satisfied

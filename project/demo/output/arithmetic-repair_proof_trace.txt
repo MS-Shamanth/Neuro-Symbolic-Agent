@@ -1,0 +1,8 @@
+Proof Trace
+  Step 0: accepted [rule: calc-verified]
+      text: {"logic_form": "subtotal_equals_100", "predicates": {"status": "verified"}}
+  Step 1: repaired [rule: calc-verified]
+      text: {"logic_form": "total_equals_92_typo", "predicates": {"status": "draft"}}
+      violated rules: calc-verified
+      repair 0: violated [calc-verified] -> repaired: total_equals_108_with_tax
+Termination: goal-satisfied

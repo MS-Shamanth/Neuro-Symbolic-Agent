@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NSR Ablation Study — GSM8K (real model via Ollama)</title>
+<style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           margin: 0; color: #1a1a1a; background: #f6f7f9; line-height: 1.5; }
+    header { background: #0f2540; color: #fff; padding: 24px 32px; }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; color: #b9c7d8; font-size: 14px; }
+    main { max-width: 1040px; margin: 0 auto; padding: 24px 32px 64px; }
+    .section { background:#fff; border:1px solid #e2e6ea; border-radius:10px;
+               padding:20px 24px; margin:20px 0; }
+    .ablation { background:#fff3e0; border:1px solid #ffcc80; color:#7a4f01;
+                border-radius:8px; padding:12px 16px; font-size:13px; }
+    .real { background:#e8f5e9; border:1px solid #a5d6a7; color:#1b5e20;
+            border-radius:8px; padding:10px 14px; font-size:13px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+    th, td { padding:10px 12px; border-bottom:1px solid #e2e6ea; text-align:right;
+             vertical-align:top; }
+    th:first-child, td:first-child { text-align:left; }
+    thead th { background:#eef1f4; }
+    td.metric { font-weight:600; }
+    td.na { color:#9aa3ad; font-style:italic; }
+    code { background:#eef1f4; padding:1px 5px; border-radius:4px; font-size:12px; }
+    .kv { font-size:13px; color:#444; }
+    footer { text-align:center; color:#98a2ad; font-size:12px; padding:20px; }
+    </style>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic System — Ablation Study (GSM8K)</h1>
+  <p>Four configurations on the SAME subset: plain-llm · constrained-decoding ·
+     actr-no-validation · full-neuro-symbolic — real model qwen3:8b
+     via Ollama</p>
+</header>
+<main>
+  <div class="section">
+    <p class="ablation"><b>Ablation study.</b> This is an ABLATION STUDY: all four configurations are evaluated on the SAME GSM8K subset so each architectural component&#x27;s contribution can be isolated. Accuracy and latency are reported for ALL four configs. Faithfulness and step-hallucination rate are only substantive when the Validation Engine can actually REJECT a step — configs A (plain-llm) and B (constrained-decoding) have no validation, and config C (actr-no-validation) always accepts — so for those three configs these two metrics are marked n/a and shown only for config D (full-neuro-symbolic).</p>
+    <p class="real"><b>Real model: qwen3:8b via Ollama.</b> Every
+      configuration's answers are genuine model output; config D additionally produces a
+      real Proof Trace and Faithfulness Score under live arithmetic validation.</p>
+    <p class="kv">Dataset: <b>4</b> items — mathematical-reasoning (4).
+      bundled ORIGINAL sample (4 items) — NOT official GSM8K; pass --path &lt;test.jsonl&gt; to use the official corpus. Model id:
+      <b>ollama:qwen3:8b</b>. Seed:
+      <b>7</b>. Repeated runs:
+      <b>1</b>.</p>
+  </div>
+  <div class="section">
+    <h2>Configurations</h2>
+    <table><tbody>
+<tr><td class="metric">A · Plain LLM (<code>plain-llm</code>)</td><td>Model answers directly (llm-only baseline). No constrained decoding, no ACT-R buffers/rule logic, no validation.</td></tr><tr><td class="metric">B · Constrained decoding (<code>constrained-decoding</code>)</td><td>LLM + Constrained Decoder only (structured JSON output). No ACT-R rule logic, no symbolic validation or repair.</td></tr><tr><td class="metric">C · ACT-R, no validation (<code>actr-no-validation</code>)</td><td>Full pipeline (constrained decoding + ACT-R Controller buffers + rule selection) but with a no-op Validation Engine that always accepts — no rejection, no repair.</td></tr><tr><td class="metric">D · Full neuro-symbolic (<code>full-neuro-symbolic</code>)</td><td>Full neuro-symbolic system: constrained decoding + ACT-R Controller + arithmetic validation with the bounded repair sub-loop (same as RealMathSystem).</td></tr>
+    </tbody></table>
+  </div>
+  <div class="section">
+    <h2>Per-component comparison</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>A · Plain LLM<br/><code>plain-llm</code></th><th>B · Constrained decoding<br/><code>constrained-decoding</code></th><th>C · ACT-R, no validation<br/><code>actr-no-validation</code></th><th>D · Full neuro-symbolic<br/><code>full-neuro-symbolic</code></th></tr></thead>
+      <tbody>
+<tr><td class="metric">Accuracy (↑)</td><td>1.000</td><td>0.000</td><td>1.000</td><td><b>1.000</b></td></tr>
+<tr><td class="metric">Step hallucination rate (↓)</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td><b>0.000</b></td></tr>
+<tr><td class="metric">Faithfulness (↑)</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td><b>1.000</b></td></tr>
+<tr><td class="metric">Mean latency</td><td>9968.21 ms</td><td>7998.54 ms</td><td>32379.66 ms</td><td><b>33924.24 ms</b></td></tr>
+<tr><td class="metric">p95 latency</td><td>15104.76 ms</td><td>8810.69 ms</td><td>41941.87 ms</td><td><b>40712.48 ms</b></td></tr>
+<tr><td class="metric">Latency overhead vs Plain LLM</td><td>0.00 ms</td><td>-1969.67 ms</td><td>22411.45 ms</td><td><b>23956.03 ms</b></td></tr>
+<tr><td class="metric">Reasoning consistency (↑)</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td class="na"><b>n/a</b></td></tr>
+      </tbody>
+    </table>
+    <p class="kv">Faithfulness and step-hallucination rate are <b>n/a</b> for plain-llm,
+      constrained-decoding, and actr-no-validation (no real step rejection is possible) and
+      are reported only for full-neuro-symbolic. Accuracy and latency are reported for all
+      four. Latency overhead is measured relative to <code>plain-llm</code>.</p>
+  </div>
+</main>
+<footer>Generated by demo/ablation.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>

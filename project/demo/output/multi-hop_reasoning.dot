@@ -1,0 +1,12 @@
+digraph ProofTrace {
+    rankdir=TD;
+    GB [label="Goal Buffer", shape=stadium, style=filled, fillcolor="#e0e0e0"];
+    S0 [label="Step 0 (accepted): grounded-inference (seeded)", shape=box, style=filled, fillcolor="#d4f7d4"];
+    S1 [label="Step 1 (accepted): grounded-inference (seeded)", shape=box, style=filled, fillcolor="#d4f7d4"];
+    S2 [label="Step 2 (accepted): grounded-inference (seeded)", shape=box, style=filled, fillcolor="#d4f7d4"];
+    T [label="Verified Output", shape=stadium, style=filled, fillcolor="#e0e0e0"];
+    GB -> S0;
+    S0 -> S1;
+    S1 -> S2;
+    S2 -> T;
+}

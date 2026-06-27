@@ -1,0 +1,280 @@
+"""Zero-dependency local web interface for the Neuro-Symbolic reasoning demo.
+
+A tiny :mod:`http.server` app (Python standard library only — no Flask/FastAPI, no new
+dependencies) that lets you pick a scenario in the browser and view the **exact same**
+reasoning report the file export produces. It binds to loopback only (``127.0.0.1``) and is
+an unauthenticated, offline demo server intended for localhost use.
+
+Run from the ``project/`` directory::
+
+    python demo/web_app.py                 # serve on http://127.0.0.1:8000/
+    python demo/web_app.py --port 9000     # choose a port
+    python demo/web_app.py --host 127.0.0.1 --port 8000
+
+Routes:
+
+- ``GET /``                        — index page listing the available scenarios.
+- ``GET /run?scenario=<name>``     — runs that scenario in-process and returns the full
+  reasoning-report HTML (optionally ``&rule_learning=1``, accepted for forward
+  compatibility; the report rendering is identical).
+- anything else                    — a clean 404 (no stack trace).
+
+Everything runs **offline and deterministically** via the scripted
+:class:`~nsr.llm_component.MockBackend` — no network and no API key. Only the predefined
+scenarios (keyed by name in :data:`scenarios.SCENARIOS`) are ever executed; the request's
+scenario parameter is validated against those known keys and nothing from the request is
+ever passed to ``eval``/``exec``.
+
+The routing is factored into the pure function :func:`handle`, so it can be exercised in
+tests without binding a real socket/port.
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+# --- Make ``nsr`` (in src/) and the sibling demo modules importable when run directly ---
+_DEMO_DIR = Path(__file__).resolve().parent
+_PROJECT_DIR = _DEMO_DIR.parent
+for _p in (str(_PROJECT_DIR / "src"), str(_DEMO_DIR)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from nsr.models import VerifiedOutput  # noqa: E402
+from nsr.trace_visualizer import to_mermaid  # noqa: E402
+
+import run_demo  # noqa: E402
+import scenarios  # noqa: E402
+
+#: Default loopback host. Bind to loopback only so the demo is never exposed off-box.
+DEFAULT_HOST = "127.0.0.1"
+#: Default port for the demo server.
+DEFAULT_PORT = 8000
+
+#: Shared notice rendered on the index page (and reused in startup logging).
+_LOCALHOST_NOTICE = (
+    "This is an unauthenticated local demo server intended for localhost use only. "
+    "It binds to 127.0.0.1 (loopback) and runs fully offline via a scripted MockBackend "
+    "(no network, no API key). Do not expose it to other hosts."
+)
+
+
+# --------------------------------------------------------------------------- #
+# HTML rendering for the index page (reuses run_demo._CSS for a matching look)
+# --------------------------------------------------------------------------- #
+
+
+def _render_index() -> str:
+    """Render the index page listing every available scenario as a link."""
+    cards = []
+    for name in sorted(scenarios.SCENARIOS):
+        scenario = scenarios.get_scenario(name)
+        cards.append(
+            f"""    <div class="card accepted">
+      <div class="row">
+        <a class="run-link" href="/run?scenario={html.escape(name)}">{html.escape(scenario.title)}</a>
+        <span class="meta">{html.escape(name)}</span>
+      </div>
+      <p class="meta">{html.escape(scenario.description)}</p>
+      <p><a class="run-link" href="/run?scenario={html.escape(name)}">Run this scenario →</a></p>
+    </div>"""
+        )
+    cards_html = "\n".join(cards)
+
+    extra_css = """
+.run-link { font-weight: 600; color: #0f2540; text-decoration: none; font-size: 16px; }
+.run-link:hover { text-decoration: underline; }
+.banner { background: #fff3cd; border: 1px solid #ffe69c; color: #664d03;
+          border-radius: 8px; padding: 12px 16px; margin: 0 0 16px; font-size: 13px; }
+"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NSR Reasoning Demo — Scenarios</title>
+<style>{run_demo._CSS}{extra_css}</style>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic Reasoning — Web Demo</h1>
+  <p>Pick a scenario to run the reasoning pipeline and view its report.</p>
+</header>
+<main>
+  <div class="section">
+    <div class="banner"><b>Local demo server.</b> {html.escape(_LOCALHOST_NOTICE)}</div>
+    <p>Each scenario runs the real dual-process pipeline end-to-end over a scripted,
+       offline <code>MockBackend</code>. Selecting one runs it in-process and renders the
+       same self-contained reasoning report the file export produces — step-by-step cards,
+       a Mermaid reasoning diagram, and the working-memory buffers.</p>
+  </div>
+  <div class="section">
+    <h2>Available scenarios</h2>
+    <div class="cards">
+{cards_html}
+    </div>
+  </div>
+</main>
+<footer>Generated by demo/web_app.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>
+"""
+
+
+def _render_message_page(title: str, message: str) -> str:
+    """Render a small, friendly message page (used for unknown scenario / 404)."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{html.escape(title)}</title>
+<style>{run_demo._CSS}</style>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic Reasoning — Web Demo</h1>
+  <p>{html.escape(title)}</p>
+</header>
+<main>
+  <div class="section">
+    <p>{html.escape(message)}</p>
+    <p><a href="/">← Back to the scenario list</a></p>
+  </div>
+</main>
+<footer>Generated by demo/web_app.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>
+"""
+
+
+# --------------------------------------------------------------------------- #
+# Pure routing (testable without a socket)
+# --------------------------------------------------------------------------- #
+
+
+def _run_report_html(scenario_name: str) -> str:
+    """Run a known scenario in-process and render its full reasoning report.
+
+    Reuses :func:`run_demo.build_html` with :func:`nsr.trace_visualizer.to_mermaid`, so the
+    browser view matches the saved HTML artifact exactly.
+    """
+    run = scenarios.run_scenario(scenario_name)
+    trace = (
+        run.result.proof_trace
+        if isinstance(run.result, VerifiedOutput)
+        else run.orchestrator.last_trace
+    )
+    mermaid_src = to_mermaid(trace)
+    return run_demo.build_html(run, mermaid_src)
+
+
+def handle(path: str, query: str) -> tuple[int, str, str]:
+    """Route a request to a response, as ``(status, content_type, body)``.
+
+    This is a **pure function** of the request ``path`` and raw ``query`` string (no socket,
+    no global state), so both the HTTP handler and the tests call it directly. The scenario
+    parameter is validated against :data:`scenarios.SCENARIOS`; nothing from the request is
+    ever evaluated or executed as code.
+    """
+    content_type = "text/html; charset=utf-8"
+    params = parse_qs(query or "")
+
+    if path == "/":
+        return 200, content_type, _render_index()
+
+    if path == "/run":
+        names = params.get("scenario", [])
+        scenario_name = names[0] if names else ""
+        if not scenario_name:
+            body = _render_message_page(
+                "Missing scenario",
+                "No scenario was specified. Choose one from the scenario list.",
+            )
+            return 400, content_type, body
+        if scenario_name not in scenarios.SCENARIOS:
+            allowed = ", ".join(sorted(scenarios.SCENARIOS))
+            body = _render_message_page(
+                "Unknown scenario",
+                f"Unknown scenario '{scenario_name}'. Available scenarios are: {allowed}.",
+            )
+            return 404, content_type, body
+        # Validated against the known keys above — safe to run by name.
+        return 200, content_type, _run_report_html(scenario_name)
+
+    body = _render_message_page(
+        "Not found",
+        f"No resource exists at '{path}'. Try the scenario list at /.",
+    )
+    return 404, content_type, body
+
+
+# --------------------------------------------------------------------------- #
+# HTTP server wiring
+# --------------------------------------------------------------------------- #
+
+
+class DemoRequestHandler(BaseHTTPRequestHandler):
+    """A minimal GET handler that delegates all routing to :func:`handle`."""
+
+    server_version = "NSRDemo/1.0"
+
+    def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler API)
+        parts = urlsplit(self.path)
+        status, content_type, body = handle(parts.path, parts.query)
+        encoded = body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def log_message(self, fmt: str, *args) -> None:  # noqa: A003
+        # Concise, stderr-only access logging for the local demo.
+        sys.stderr.write("[web_app] %s - %s\n" % (self.address_string(), fmt % args))
+
+
+def serve(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> int:
+    """Start the demo server on ``host``/``port`` (loopback by default) and block."""
+    httpd = ThreadingHTTPServer((host, port), DemoRequestHandler)
+    bound_host, bound_port = httpd.server_address[0], httpd.server_address[1]
+    url = f"http://{bound_host}:{bound_port}/"
+    print(f"Neuro-Symbolic reasoning demo server running at {url}")
+    print(_LOCALHOST_NOTICE)
+    print("Press Ctrl+C to stop.")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down.")
+    finally:
+        httpd.server_close()
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Serve the Neuro-Symbolic reasoning demo web interface (offline, localhost)."
+    )
+    parser.add_argument(
+        "--host",
+        default=DEFAULT_HOST,
+        help=f"host/interface to bind (default: {DEFAULT_HOST}; loopback only is recommended)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help=f"port to bind (default: {DEFAULT_PORT})",
+    )
+    args = parser.parse_args(argv)
+    return serve(host=args.host, port=args.port)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

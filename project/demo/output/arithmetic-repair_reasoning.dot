@@ -1,0 +1,12 @@
+digraph ProofTrace {
+    rankdir=TD;
+    GB [label="Goal Buffer", shape=stadium, style=filled, fillcolor="#e0e0e0"];
+    S0 [label="Step 0 (accepted): calc-verified (seeded)", shape=box, style=filled, fillcolor="#d4f7d4"];
+    S1 [label="Step 1 (repaired): calc-verified", shape=box, style=filled, fillcolor="#fff3c4"];
+    R1_0 [label="Repair 0 (step 1): violated [calc-verified]", shape=diamond, style=filled, fillcolor="#fff3c4"];
+    T [label="Verified Output", shape=stadium, style=filled, fillcolor="#e0e0e0"];
+    GB -> S0;
+    S0 -> S1;
+    S1 -> R1_0;
+    R1_0 -> T;
+}

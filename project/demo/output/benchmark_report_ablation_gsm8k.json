@@ -1,0 +1,133 @@
+{
+  "mode": "ablation",
+  "is_real": true,
+  "study": "ablation",
+  "real_model": "qwen3:8b",
+  "dataset_label": "bundled ORIGINAL sample (4 items) \u2014 NOT official GSM8K; pass --path <test.jsonl> to use the official corpus",
+  "note": "This is an ABLATION STUDY: all four configurations are evaluated on the SAME GSM8K subset so each architectural component's contribution can be isolated. Accuracy and latency are reported for ALL four configs. Faithfulness and step-hallucination rate are only substantive when the Validation Engine can actually REJECT a step \u2014 configs A (plain-llm) and B (constrained-decoding) have no validation, and config C (actr-no-validation) always accepts \u2014 so for those three configs these two metrics are marked n/a and shown only for config D (full-neuro-symbolic).",
+  "system_method": "full-neuro-symbolic",
+  "configs": [
+    "plain-llm",
+    "constrained-decoding",
+    "actr-no-validation",
+    "full-neuro-symbolic"
+  ],
+  "config_labels": {
+    "plain-llm": "A \u00b7 Plain LLM",
+    "constrained-decoding": "B \u00b7 Constrained decoding",
+    "actr-no-validation": "C \u00b7 ACT-R, no validation",
+    "full-neuro-symbolic": "D \u00b7 Full neuro-symbolic"
+  },
+  "config_descriptions": {
+    "plain-llm": "Model answers directly (llm-only baseline). No constrained decoding, no ACT-R buffers/rule logic, no validation.",
+    "constrained-decoding": "LLM + Constrained Decoder only (structured JSON output). No ACT-R rule logic, no symbolic validation or repair.",
+    "actr-no-validation": "Full pipeline (constrained decoding + ACT-R Controller buffers + rule selection) but with a no-op Validation Engine that always accepts \u2014 no rejection, no repair.",
+    "full-neuro-symbolic": "Full neuro-symbolic system: constrained decoding + ACT-R Controller + arithmetic validation with the bounded repair sub-loop (same as RealMathSystem)."
+  },
+  "na_metrics_for_ablations": [
+    "faithfulness",
+    "step_hallucination_rate"
+  ],
+  "baseline_methods": [
+    "actr-no-validation",
+    "constrained-decoding",
+    "plain-llm"
+  ],
+  "repeated_run_count": 1,
+  "model_id": "ollama:qwen3:8b",
+  "seed": 7,
+  "dataset": [
+    {
+      "item_id": "gsm8k-0",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "15"
+    },
+    {
+      "item_id": "gsm8k-1",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "17"
+    },
+    {
+      "item_id": "gsm8k-2",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "220"
+    },
+    {
+      "item_id": "gsm8k-3",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "42"
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "final_answer_accuracy",
+      "label": "Accuracy (\u2191)",
+      "values": {
+        "plain-llm": 1.0,
+        "constrained-decoding": 0.0,
+        "actr-no-validation": 1.0,
+        "full-neuro-symbolic": 1.0
+      }
+    },
+    {
+      "metric": "step_hallucination_rate",
+      "label": "Step hallucination rate (\u2193)",
+      "values": {
+        "plain-llm": null,
+        "constrained-decoding": null,
+        "actr-no-validation": null,
+        "full-neuro-symbolic": 0.0
+      }
+    },
+    {
+      "metric": "faithfulness",
+      "label": "Faithfulness (\u2191)",
+      "values": {
+        "plain-llm": null,
+        "constrained-decoding": null,
+        "actr-no-validation": null,
+        "full-neuro-symbolic": 1.0
+      }
+    },
+    {
+      "metric": "mean_latency",
+      "label": "Mean latency",
+      "values": {
+        "plain-llm": 9968.21292500681,
+        "constrained-decoding": 7998.537950006721,
+        "actr-no-validation": 32379.664325002523,
+        "full-neuro-symbolic": 33924.24117500195
+      }
+    },
+    {
+      "metric": "p95_latency",
+      "label": "p95 latency",
+      "values": {
+        "plain-llm": 15104.755740013203,
+        "constrained-decoding": 8810.690255009104,
+        "actr-no-validation": 41941.86982001411,
+        "full-neuro-symbolic": 40712.477725006465
+      }
+    },
+    {
+      "metric": "latency_overhead",
+      "label": "Latency overhead vs Plain LLM",
+      "values": {
+        "plain-llm": 0.0,
+        "constrained-decoding": -1969.674975000089,
+        "actr-no-validation": 22411.451399995713,
+        "full-neuro-symbolic": 23956.028249995143
+      }
+    },
+    {
+      "metric": "reasoning_consistency",
+      "label": "Reasoning consistency (\u2191)",
+      "values": {
+        "plain-llm": null,
+        "constrained-decoding": null,
+        "actr-no-validation": null,
+        "full-neuro-symbolic": null
+      }
+    }
+  ]
+}

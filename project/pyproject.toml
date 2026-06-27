@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nsr"
+version = "0.1.0"
+description = "Neuro-Symbolic System-2 Reasoning Architecture"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Neuro-Symbolic Agent Team" }]
+dependencies = [
+    # LLM SDK (hosted-API backend). Local-runtime backends are optional extras.
+    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "hypothesis>=6.90",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+pythonpath = ["src"]

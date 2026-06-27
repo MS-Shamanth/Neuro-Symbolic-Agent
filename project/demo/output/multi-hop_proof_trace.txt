@@ -1,0 +1,8 @@
+Proof Trace
+  Step 0: accepted [rule: grounded-inference]
+      text: {"logic_form": "capital_of_france_is_paris", "predicates": {"status": "grounded"}}
+  Step 1: accepted [rule: grounded-inference]
+      text: {"logic_form": "paris_is_in_france", "predicates": {"status": "grounded"}}
+  Step 2: accepted [rule: grounded-inference]
+      text: {"logic_form": "summary_paris_is_the_french_capital", "predicates": {"status": "grounded"}}
+Termination: goal-satisfied

@@ -1,0 +1,208 @@
+{
+  "report": "reasoning-stats",
+  "is_real": true,
+  "real_model": "qwen3:8b",
+  "dataset_label": "bundled ORIGINAL sample (30 items) \u2014 NOT official GSM8K; pass --path <test.jsonl> to use the official corpus",
+  "note": "With the current general-purpose starter rule set, rule utilization is dominated by the well-formed-step rule plus arithmetic-correctness repairs; richer domain rules (Phase 3) would make this analysis more interesting.",
+  "questions_evaluated": 30,
+  "failed_items": 0,
+  "final_answer_accuracy": 0.9666666666666667,
+  "stats": {
+    "total_questions": 30,
+    "total_reasoning_steps": 97,
+    "accepted_first_pass": 97,
+    "rejected": 0,
+    "repaired_successfully": 0,
+    "repair_failed": 0,
+    "repair_success_rate": null,
+    "termination_reason_counts": {
+      "goal-satisfied": 30
+    },
+    "rule_utilization": {
+      "well-formed-step": 97
+    },
+    "repair_violation_counts": {}
+  },
+  "per_item": [
+    {
+      "item_id": "gsm8k-0",
+      "final_answer": "24 - 9 = 15",
+      "ground_truth": "15",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-1",
+      "final_answer": "24 - 7 = 17",
+      "ground_truth": "17",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-2",
+      "final_answer": "180 + 40 = 220",
+      "ground_truth": "220",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-3",
+      "final_answer": "60 - 18 = 42",
+      "ground_truth": "42",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-4",
+      "final_answer": "7 * 3 = 21",
+      "ground_truth": "21",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-5",
+      "final_answer": "29",
+      "ground_truth": "29",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-6",
+      "final_answer": "45 - 6 = 39",
+      "ground_truth": "39",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-7",
+      "final_answer": "320 - 270 = 50",
+      "ground_truth": "50",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-8",
+      "final_answer": "40 * 3 = 120",
+      "ground_truth": "120",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-9",
+      "final_answer": "5",
+      "ground_truth": "5",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-10",
+      "final_answer": "54 - 14 = 40",
+      "ground_truth": "40",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-11",
+      "final_answer": "96 * 3 = 288",
+      "ground_truth": "288",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-12",
+      "final_answer": "240 - 90 = 150",
+      "ground_truth": "150",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-13",
+      "final_answer": "300 - 75 = 225",
+      "ground_truth": "225",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-14",
+      "final_answer": "48 + 30 = 78",
+      "ground_truth": "78",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-15",
+      "final_answer": "18",
+      "ground_truth": "18",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-16",
+      "final_answer": "12 + 4 = 16",
+      "ground_truth": "16",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-17",
+      "final_answer": "320",
+      "ground_truth": "320",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-18",
+      "final_answer": "600 - 225 = 375",
+      "ground_truth": "375",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-19",
+      "final_answer": "180 / 9 = 20",
+      "ground_truth": "20",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-20",
+      "final_answer": "17",
+      "ground_truth": "17",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-21",
+      "final_answer": "480 / 6 = 80",
+      "ground_truth": "80",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-22",
+      "final_answer": "384 / 48 = 8",
+      "ground_truth": "8",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-23",
+      "final_answer": "32 + 79 = 111",
+      "ground_truth": "111",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-24",
+      "final_answer": "20 + 12 = 32",
+      "ground_truth": "32",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-25",
+      "final_answer": "126 - 100 = 26",
+      "ground_truth": "26",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-26",
+      "final_answer": "24 * 15 = 360",
+      "ground_truth": "360",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-27",
+      "final_answer": "25 - 9 = 16",
+      "ground_truth": "16",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-28",
+      "final_answer": "88 + 18 = 106",
+      "ground_truth": "106",
+      "correct": true
+    },
+    {
+      "item_id": "gsm8k-29",
+      "final_answer": "40 * 13 = 520",
+      "ground_truth": "380",
+      "correct": false
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing / property-based testing caches
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+
+# Logs / temp
+*.log
+test_run.log
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local data artifacts (keep small bundled samples under demo/data)
+*.tmp

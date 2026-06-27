@@ -1,0 +1,122 @@
+{
+  "mode": "mock",
+  "is_real": false,
+  "real_model": null,
+  "note": "Offline deterministic demo. Answers are from scripted MockBackends and latencies from injected step clocks; values are illustrative, not real-LLM measurements.",
+  "system_method": "neuro-symbolic",
+  "baseline_methods": [
+    "chain-of-thought",
+    "llm-only"
+  ],
+  "repeated_run_count": 1,
+  "model_id": "offline-mock-gsm8k",
+  "seed": 7,
+  "dataset": [
+    {
+      "item_id": "mock-1",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "47"
+    },
+    {
+      "item_id": "mock-2",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "58"
+    },
+    {
+      "item_id": "mock-3",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "31"
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "final_answer_accuracy",
+      "system_value": 1.0,
+      "baseline_values": {
+        "chain-of-thought": 0.3333333333333333,
+        "llm-only": 0.6666666666666666
+      },
+      "differences": {
+        "chain-of-thought": 0.6666666666666667,
+        "llm-only": 0.33333333333333337
+      }
+    },
+    {
+      "metric": "step_hallucination_rate",
+      "system_value": 0.0,
+      "baseline_values": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      }
+    },
+    {
+      "metric": "faithfulness",
+      "system_value": 0.6666666666666666,
+      "baseline_values": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 0.6666666666666666,
+        "llm-only": 0.6666666666666666
+      }
+    },
+    {
+      "metric": "mean_latency",
+      "system_value": 6.0,
+      "baseline_values": {
+        "chain-of-thought": 3.0,
+        "llm-only": 1.5
+      },
+      "differences": {
+        "chain-of-thought": 3.0,
+        "llm-only": 4.5
+      }
+    },
+    {
+      "metric": "p95_latency",
+      "system_value": 6.000000000000002,
+      "baseline_values": {
+        "chain-of-thought": 3.0,
+        "llm-only": 1.5
+      },
+      "differences": {
+        "chain-of-thought": 3.0000000000000018,
+        "llm-only": 4.500000000000002
+      }
+    },
+    {
+      "metric": "latency_overhead",
+      "system_value": 4.5,
+      "baseline_values": {
+        "chain-of-thought": 1.5,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 3.0,
+        "llm-only": 4.5
+      }
+    },
+    {
+      "metric": "reasoning_consistency",
+      "system_value": null,
+      "baseline_values": {
+        "chain-of-thought": null,
+        "llm-only": null
+      },
+      "differences": {
+        "chain-of-thought": null,
+        "llm-only": null
+      }
+    }
+  ],
+  "reasoning_consistency": {
+    "neuro-symbolic": null,
+    "llm-only": null,
+    "chain-of-thought": null
+  }
+}

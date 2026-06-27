@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NSR Reasoning Report — Multi-hop derivation (all hops accepted)</title>
+<style>
+:root { --green:#2e7d32; --red:#c62828; --amber:#f9a825; --ink:#1a1a1a; --muted:#666; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+       margin: 0; color: var(--ink); background: #f6f7f9; line-height: 1.5; }
+header { background: #0f2540; color: #fff; padding: 24px 32px; }
+header h1 { margin: 0 0 4px; font-size: 22px; }
+header p { margin: 0; color: #b9c7d8; font-size: 14px; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 32px 64px; }
+.section { background: #fff; border: 1px solid #e2e6ea; border-radius: 10px;
+           padding: 20px 24px; margin: 20px 0; }
+.section h2 { margin: 0 0 12px; font-size: 17px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px;
+         font-weight: 600; color: #fff; }
+.badge.accepted { background: var(--green); }
+.badge.rejected { background: var(--red); }
+.badge.repaired { background: var(--amber); color: #3a2c00; }
+.offline { background: #fff8e1; border: 1px solid #ffe082; color: #6d5200;
+           border-radius: 8px; padding: 10px 14px; font-size: 13px; margin: 0 0 8px; }
+.cards { display: grid; gap: 14px; }
+.card { border: 1px solid #e2e6ea; border-left-width: 6px; border-radius: 8px;
+        padding: 14px 16px; background: #fcfcfd; }
+.card.accepted { border-left-color: var(--green); }
+.card.rejected { border-left-color: var(--red); }
+.card.repaired { border-left-color: var(--amber); }
+.card .row { display: flex; justify-content: space-between; align-items: center;
+             gap: 12px; flex-wrap: wrap; }
+.card .lf { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px;
+            background: #eef1f4; padding: 6px 10px; border-radius: 6px; margin: 8px 0;
+            display: inline-block; }
+.meta { font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); }
+.rule { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.origin { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px;
+          border: 1px solid #cbd2d9; color: #44525f; }
+.origin.learned { background: #e8f0fe; border-color: #aac4f6; color: #1a3e8c; }
+.origin.seeded { background: #f0f0f0; }
+.repairs { margin: 8px 0 0; padding: 8px 12px; background: #fff6da; border-radius: 6px;
+           font-size: 13px; }
+.panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.panel .box { border: 1px solid #e2e6ea; border-radius: 8px; padding: 12px 14px;
+              background: #fcfcfd; }
+.panel .box h3 { margin: 0 0 8px; font-size: 14px; }
+.kv { font-size: 13px; }
+.kv .k { color: var(--muted); }
+ul.tight { margin: 6px 0 0; padding-left: 18px; }
+ul.tight li { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+.metric { display: inline-block; margin-right: 22px; }
+.metric .v { font-size: 24px; font-weight: 700; }
+.metric .l { font-size: 12px; color: var(--muted); display: block; }
+.mermaid { background: #fff; border: 1px dashed #cbd2d9; border-radius: 8px; padding: 12px; }
+footer { text-align: center; color: #98a2ad; font-size: 12px; padding: 20px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){
+  if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+});</script>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic Reasoning Report</h1>
+  <p>Multi-hop derivation (all hops accepted)</p>
+</header>
+<main>
+  <div class="section">
+    <p class="offline">Offline &amp; deterministic demo: every reasoning step is produced
+      by a scripted MockBackend (no network, no API key). The only external resource is the
+      mermaid.js diagram library loaded from a CDN for rendering below.</p>
+    <h2>Scenario</h2>
+    <p>A multi-hop chain where each hop builds on the accepted conclusions already in Declarative Memory. Every hop is grounded and accepted, growing the Imaginal Buffer toward the final summary.</p>
+    <p class="kv"><span class="k">Query:</span> <b>Identify the capital of France. then identify its country. then conclude the summary.</b></p>
+  </div>
+
+  <div class="section">
+    <h2>Reasoning visualization</h2>
+    <pre class="mermaid">
+flowchart TD
+    GB(["Goal Buffer"])
+    S0["Step 0 (accepted): grounded-inference (seeded)"]
+    S1["Step 1 (accepted): grounded-inference (seeded)"]
+    S2["Step 2 (accepted): grounded-inference (seeded)"]
+    T(["Verified Output"])
+    GB --> S0
+    S0 --> S1
+    S1 --> S2
+    S2 --> T
+    classDef accepted fill:#d4f7d4,stroke:#2e7d32,color:#000;
+    classDef rejected fill:#f7d4d4,stroke:#c62828,color:#000;
+    classDef repaired fill:#fff3c4,stroke:#f9a825,color:#000;
+    class S0 accepted;
+    class S1 accepted;
+    class S2 accepted;
+    </pre>
+  </div>
+
+  <div class="section">
+    <h2>Reasoning steps</h2>
+    <div class="cards">
+<div class="card accepted">
+  <div class="row">
+    <span class="badge accepted">Validation ✓ accepted</span>
+    <span class="meta">step #0</span>
+  </div>
+  <div class="lf">capital_of_france_is_paris</div>
+  <div class="meta">applied rule: <span class="rule">grounded-inference</span> <span class="origin seeded">seeded</span></div>
+</div>
+<div class="card accepted">
+  <div class="row">
+    <span class="badge accepted">Validation ✓ accepted</span>
+    <span class="meta">step #1</span>
+  </div>
+  <div class="lf">paris_is_in_france</div>
+  <div class="meta">applied rule: <span class="rule">grounded-inference</span> <span class="origin seeded">seeded</span></div>
+</div>
+<div class="card accepted">
+  <div class="row">
+    <span class="badge accepted">Validation ✓ accepted</span>
+    <span class="meta">step #2</span>
+  </div>
+  <div class="lf">summary_paris_is_the_french_capital</div>
+  <div class="meta">applied rule: <span class="rule">grounded-inference</span> <span class="origin seeded">seeded</span></div>
+</div>
+    </div>
+  </div>
+
+  
+    <div class="section">
+      <h2>Outcome</h2>
+      <div class="metric"><span class="v">1.00</span>
+        <span class="l">Faithfulness Score</span></div>
+      <div class="metric"><span class="v">goal-satisfied</span>
+        <span class="l">Termination reason</span></div>
+      <div class="metric"><span class="v">3</span>
+        <span class="l">Reasoning steps</span></div>
+      <p class="kv"><span class="k">Final answer:</span>
+        <b class="rule">summary_paris_is_the_french_capital</b></p>
+    </div>
+    <div class="section">
+      <h2>Working-memory buffers (final snapshot)</h2>
+      <div class="panel">
+        <div class="box">
+          <h3>Goal Buffer</h3>
+          <div class="kv">Identify the capital of France. then identify its country. then conclude the summary.
+            (goal satisfied: <b>True</b>)</div>
+          <ul class="tight"><li>✓ Identify the capital of France</li><li>✓ identify its country</li><li>✓ conclude the summary</li></ul>
+        </div>
+        <div class="box">
+          <h3>Declarative Memory (accepted conclusions)</h3>
+          <ul class="tight"><li>capital_of_france_is_paris</li><li>paris_is_in_france</li><li>summary_paris_is_the_french_capital</li></ul>
+        </div>
+        <div class="box">
+          <h3>Imaginal Buffer (partial representation)</h3>
+          <div class="lf">summary_paris_is_the_french_capital</div>
+        </div>
+        <div class="box">
+          <h3>Procedural Memory (available rules)</h3>
+          <ul class="tight"><li>grounded-inference — IF (always) THEN THEN grounded</li><li>consistency-guard — IF IF contradiction THEN THEN flag</li></ul>
+        </div>
+      </div>
+    </div>
+    
+</main>
+<footer>Generated by demo/run_demo.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>

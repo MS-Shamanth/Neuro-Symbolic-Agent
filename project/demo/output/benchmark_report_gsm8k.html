@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NSR Benchmark — REAL model via Ollama</title>
+<style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           margin: 0; color: #1a1a1a; background: #f6f7f9; line-height: 1.5; }
+    header { background: #0f2540; color: #fff; padding: 24px 32px; }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; color: #b9c7d8; font-size: 14px; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px 32px 64px; }
+    .section { background:#fff; border:1px solid #e2e6ea; border-radius:10px;
+               padding:20px 24px; margin:20px 0; }
+    .offline { background:#fff8e1; border:1px solid #ffe082; color:#6d5200;
+               border-radius:8px; padding:10px 14px; font-size:13px; }
+    .real { background:#e8f5e9; border:1px solid #a5d6a7; color:#1b5e20;
+            border-radius:8px; padding:10px 14px; font-size:13px; }
+    .scaffold { background:#e3f2fd; border:1px solid #90caf9; color:#0d47a1;
+                border-radius:8px; padding:10px 14px; font-size:13px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+    th, td { padding:10px 12px; border-bottom:1px solid #e2e6ea; text-align:right; }
+    th:first-child, td:first-child { text-align:left; }
+    thead th { background:#eef1f4; }
+    td.metric { font-weight:600; }
+    td.pos { color:#2e7d32; font-weight:600; }
+    td.neg { color:#c62828; font-weight:600; }
+    .kv { font-size:13px; color:#444; }
+    footer { text-align:center; color:#98a2ad; font-size:12px; padding:20px; }
+    </style>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic System — Real-Model Benchmark</h1>
+  <p>Real model: qwen3:8b via Ollama — System vs Plain LLM vs Chain-of-Thought</p>
+</header>
+<main>
+  <div class="section">
+    <p class="real"><b>Real model: qwen3:8b via Ollama.</b> These are <b>genuine results from an actual language model</b> — every System and baseline answer was produced by the model, not scripted. They are NOT the offline mock numbers (see <code>benchmark_report.html</code> for the deterministic mock comparison).</p><p class="scaffold">What is genuinely real vs scaffold: the <b>baseline</b> and <b>System</b> final answers are real model output; the System also produces a real Proof Trace and a real Faithfulness Score. The System’s step-level validation here uses a <b>general-purpose starter production-rule set</b> (accept any well-formed step that carries a non-empty conclusion, plus a consistency guard); domain-specific production rules would strengthen step-level validation.</p><p class="kv">Dataset: <b>bundled ORIGINAL sample (3 items) — NOT official GSM8K; pass --path &lt;test.jsonl&gt; to use the official corpus</b>.</p><p class="scaffold"><b>Arithmetic validation is active.</b> Each intermediate calculation is checked by the ArithmeticValidationEngine: a wrong equation is REJECTED and routed to the bounded repair sub-loop rather than carried through to a wrong final answer. This is genuine content-level step validation on top of the general-purpose starter rule set.</p>
+    <p class="kv">Dataset: <b>3</b> items across domains — mathematical-reasoning (3).
+      Model id: <b>ollama:qwen3:8b</b>. Seed: <b>7</b>.
+      Repeated runs: <b>1</b>.</p>
+    <p class="kv">Note: faithfulness and step-hallucination rate are derived from the
+      System's Proof Trace; baselines emit no trace, so those values are 0 for baselines by
+      construction.</p>
+  </div>
+  <div class="section">
+    <h2>Comparison across 7 metrics</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>Neuro-Symbolic System</th><th>Chain-of-Thought</th><th>Δ (System − Chain-of-Thought)</th><th>Plain LLM</th><th>Δ (System − Plain LLM)</th></tr></thead>
+      <tbody>
+<tr><td class="metric">Accuracy (↑)</td><td><b>1.000</b></td><td>1.000</td><td class="">0.000</td><td>1.000</td><td class="">0.000</td></tr>
+<tr><td class="metric">Step hallucination rate (↓)</td><td><b>0.000</b></td><td>0.000</td><td class="">0.000</td><td>0.000</td><td class="">0.000</td></tr>
+<tr><td class="metric">Faithfulness (↑)</td><td><b>1.000</b></td><td>0.000</td><td class="pos">+1.000</td><td>0.000</td><td class="pos">+1.000</td></tr>
+<tr><td class="metric">Mean latency</td><td><b>34218.44 ms</b></td><td>10582.08 ms</td><td class="pos">+23636.36 ms</td><td>10337.88 ms</td><td class="pos">+23880.56 ms</td></tr>
+<tr><td class="metric">p95 latency</td><td><b>44128.51 ms</b></td><td>13668.06 ms</td><td class="pos">+30460.44 ms</td><td>14293.76 ms</td><td class="pos">+29834.75 ms</td></tr>
+<tr><td class="metric">Latency overhead vs Plain LLM</td><td><b>23880.56 ms</b></td><td>244.19 ms</td><td class="pos">+23636.36 ms</td><td>0.00 ms</td><td class="pos">+23880.56 ms</td></tr>
+<tr><td class="metric">Reasoning consistency (↑)</td><td><b>n/a</b></td><td>n/a</td><td class="">n/a</td><td>n/a</td><td class="">n/a</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<footer>Generated by demo/run_benchmark.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>

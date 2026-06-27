@@ -1,0 +1,124 @@
+{
+  "mode": "real",
+  "is_real": true,
+  "real_model": "qwen3:8b",
+  "dataset_label": "bundled ORIGINAL sample (3 items) \u2014 NOT official GSM8K; pass --path <test.jsonl> to use the official corpus",
+  "arithmetic_validation": true,
+  "note": "REAL model results: every System and baseline answer was produced by the model 'qwen3:8b' served via Ollama \u2014 these are genuine model outputs, NOT the offline mock numbers. Faithfulness and step-hallucination rate are derived from the System's Proof Trace under a general-purpose starter production-rule set (domain-specific rules would strengthen step-level validation). Arithmetic validation is active: each intermediate equation is checked and a wrong calculation is rejected and routed to the bounded repair sub-loop rather than carried through to a wrong final answer.",
+  "system_method": "neuro-symbolic",
+  "baseline_methods": [
+    "chain-of-thought",
+    "llm-only"
+  ],
+  "repeated_run_count": 1,
+  "model_id": "ollama:qwen3:8b",
+  "seed": 7,
+  "dataset": [
+    {
+      "item_id": "gsm8k-0",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "15"
+    },
+    {
+      "item_id": "gsm8k-1",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "17"
+    },
+    {
+      "item_id": "gsm8k-2",
+      "domain": "mathematical-reasoning",
+      "ground_truth": "220"
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "final_answer_accuracy",
+      "system_value": 1.0,
+      "baseline_values": {
+        "chain-of-thought": 1.0,
+        "llm-only": 1.0
+      },
+      "differences": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      }
+    },
+    {
+      "metric": "step_hallucination_rate",
+      "system_value": 0.0,
+      "baseline_values": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      }
+    },
+    {
+      "metric": "faithfulness",
+      "system_value": 1.0,
+      "baseline_values": {
+        "chain-of-thought": 0.0,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 1.0,
+        "llm-only": 1.0
+      }
+    },
+    {
+      "metric": "mean_latency",
+      "system_value": 34218.440566658195,
+      "baseline_values": {
+        "chain-of-thought": 10582.0786000016,
+        "llm-only": 10337.884533335455
+      },
+      "differences": {
+        "chain-of-thought": 23636.361966656594,
+        "llm-only": 23880.55603332274
+      }
+    },
+    {
+      "metric": "p95_latency",
+      "system_value": 44128.505829998176,
+      "baseline_values": {
+        "chain-of-thought": 13668.064249999588,
+        "llm-only": 14293.75731999753
+      },
+      "differences": {
+        "chain-of-thought": 30460.441579998587,
+        "llm-only": 29834.748510000645
+      }
+    },
+    {
+      "metric": "latency_overhead",
+      "system_value": 23880.556033322744,
+      "baseline_values": {
+        "chain-of-thought": 244.19406666614427,
+        "llm-only": 0.0
+      },
+      "differences": {
+        "chain-of-thought": 23636.3619666566,
+        "llm-only": 23880.556033322744
+      }
+    },
+    {
+      "metric": "reasoning_consistency",
+      "system_value": null,
+      "baseline_values": {
+        "chain-of-thought": null,
+        "llm-only": null
+      },
+      "differences": {
+        "chain-of-thought": null,
+        "llm-only": null
+      }
+    }
+  ],
+  "reasoning_consistency": {
+    "neuro-symbolic": null,
+    "llm-only": null,
+    "chain-of-thought": null
+  }
+}

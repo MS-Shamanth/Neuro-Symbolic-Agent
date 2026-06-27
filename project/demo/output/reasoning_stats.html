@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NSR Reasoning Statistics — GSM8K (full system via Ollama)</title>
+<style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           margin: 0; color: #1a1a1a; background: #f6f7f9; line-height: 1.5; }
+    header { background: #0f2540; color: #fff; padding: 24px 32px; }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; color: #b9c7d8; font-size: 14px; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px 32px 64px; }
+    .section { background:#fff; border:1px solid #e2e6ea; border-radius:10px;
+               padding:20px 24px; margin:20px 0; }
+    .note { background:#fff3e0; border:1px solid #ffcc80; color:#7a4f01;
+            border-radius:8px; padding:12px 16px; font-size:13px; }
+    .real { background:#e8f5e9; border:1px solid #a5d6a7; color:#1b5e20;
+            border-radius:8px; padding:10px 14px; font-size:13px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+    th, td { padding:10px 12px; border-bottom:1px solid #e2e6ea; text-align:right; }
+    th:first-child, td:first-child { text-align:left; }
+    thead th { background:#eef1f4; }
+    td.metric { font-weight:600; }
+    td.na, span.na { color:#9aa3ad; font-style:italic; }
+    span.pos { color:#2e7d32; font-weight:600; }
+    span.neg { color:#c62828; font-weight:600; }
+    code { background:#eef1f4; padding:1px 5px; border-radius:4px; font-size:12px; }
+    .kv { font-size:13px; color:#444; }
+    footer { text-align:center; color:#98a2ad; font-size:12px; padding:20px; }
+    </style>
+</head>
+<body>
+<header>
+  <h1>Neuro-Symbolic System — Reasoning Statistics (GSM8K)</h1>
+  <p>What happened inside the reasoning loop of the FULL system — real model
+     qwen3:8b via Ollama</p>
+</header>
+<main>
+  <div class="section">
+    <p class="real"><b>Full neuro-symbolic system only.</b> Every step below was produced by
+      the real model under live arithmetic validation and the bounded repair sub-loop; the
+      counts are read from each query's genuine Proof Trace.</p>
+    <p class="kv">Dataset: bundled ORIGINAL sample (30 items) — NOT official GSM8K; pass --path &lt;test.jsonl&gt; to use the official corpus. Questions evaluated:
+      <b>30</b>; items that errored (no trace): <b>0</b>.
+      Final-answer accuracy: <b>96.7% (30 scored)</b>.</p>
+    <p class="note"><b>Honest note.</b> With the current general-purpose starter rule set, rule utilization is dominated by the well-formed-step rule plus arithmetic-correctness repairs; richer domain rules (Phase 3) would make this analysis more interesting.</p>
+  </div>
+
+  <div class="section">
+    <h2>Headcount</h2>
+    <table><tbody>
+<tr><td class="metric">Total questions</td><td>30</td></tr><tr><td class="metric">Total reasoning steps</td><td>97</td></tr><tr><td class="metric">Accepted on first pass</td><td>97</td></tr><tr><td class="metric">Rejected (final)</td><td>0</td></tr><tr><td class="metric">Repaired successfully</td><td>0</td></tr><tr><td class="metric">Repair failed (subset of rejected)</td><td>0</td></tr><tr><td class="metric">Repair success rate</td><td>n/a</td></tr>
+    </tbody></table>
+    <p class="kv">The first three rows partition every reasoning step
+      (accepted-first-pass + repaired-successfully + rejected = total steps); repair-failed
+      is the subset of rejected whose repair attempts never yielded an accepted step.</p>
+  </div>
+
+  <div class="section">
+    <h2>Rule utilization</h2>
+    <table>
+      <thead><tr><th>Applied rule</th><th>Count</th><th>Share</th></tr></thead>
+      <tbody>
+<tr><td class="metric"><code>well-formed-step</code></td><td>97</td><td>100.0%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Repair triggers (violated rules)</h2>
+    <table>
+      <thead><tr><th>Violated rule</th><th>Times fired</th></tr></thead>
+      <tbody>
+<tr><td colspan="2" class="na">none recorded</td></tr>
+      </tbody>
+    </table>
+    <p class="kv">How often each rule (e.g. <code>arithmetic-correctness</code>) routed a
+      step into the bounded repair sub-loop, counted per repair attempt.</p>
+  </div>
+
+  <div class="section">
+    <h2>Termination reasons</h2>
+    <table>
+      <thead><tr><th>Reason</th><th>Count</th></tr></thead>
+      <tbody>
+<tr><td class="metric"><code>goal-satisfied</code></td><td>30</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Per-item final answers</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Final answer</th><th>Ground truth</th><th>Result</th></tr></thead>
+      <tbody>
+<tr><td class="metric">gsm8k-0</td><td>24 - 9 = 15</td><td>15</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-1</td><td>24 - 7 = 17</td><td>17</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-2</td><td>180 + 40 = 220</td><td>220</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-3</td><td>60 - 18 = 42</td><td>42</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-4</td><td>7 * 3 = 21</td><td>21</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-5</td><td>29</td><td>29</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-6</td><td>45 - 6 = 39</td><td>39</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-7</td><td>320 - 270 = 50</td><td>50</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-8</td><td>40 * 3 = 120</td><td>120</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-9</td><td>5</td><td>5</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-10</td><td>54 - 14 = 40</td><td>40</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-11</td><td>96 * 3 = 288</td><td>288</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-12</td><td>240 - 90 = 150</td><td>150</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-13</td><td>300 - 75 = 225</td><td>225</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-14</td><td>48 + 30 = 78</td><td>78</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-15</td><td>18</td><td>18</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-16</td><td>12 + 4 = 16</td><td>16</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-17</td><td>320</td><td>320</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-18</td><td>600 - 225 = 375</td><td>375</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-19</td><td>180 / 9 = 20</td><td>20</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-20</td><td>17</td><td>17</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-21</td><td>480 / 6 = 80</td><td>80</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-22</td><td>384 / 48 = 8</td><td>8</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-23</td><td>32 + 79 = 111</td><td>111</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-24</td><td>20 + 12 = 32</td><td>32</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-25</td><td>126 - 100 = 26</td><td>26</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-26</td><td>24 * 15 = 360</td><td>360</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-27</td><td>25 - 9 = 16</td><td>16</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-28</td><td>88 + 18 = 106</td><td>106</td><td><span class="pos">✓ correct</span></td></tr><tr><td class="metric">gsm8k-29</td><td>40 * 13 = 520</td><td>380</td><td><span class="neg">✗ wrong</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<footer>Generated by demo/reasoning_stats.py — Neuro-Symbolic System-2 Reasoning Architecture</footer>
+</body>
+</html>
