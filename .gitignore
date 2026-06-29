@@ -35,3 +35,6 @@ Thumbs.db
 
 # Local data artifacts (keep small bundled samples under demo/data)
 *.tmp
+
+# Raw dataset shards downloaded locally (converted JSONL is kept under demo/data)
+*.parquet
