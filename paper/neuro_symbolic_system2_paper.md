@@ -127,3 +127,248 @@ The controller maintains four buffers for the lifetime of a query:
 When multiple rules match, exactly one is selected by a deterministic conflict-resolution
 policy, which (together with a single random seed governing all stochastic operations) makes
 runs reproducible.
+
+---
+
+## IV. Proposed Architecture
+
+The system executes a **closed four-stage reasoning cycle**. Given a query, the controller
+initializes the ACT-R buffers (Goal, Declarative, Procedural, Imaginal) and then repeats the
+following cycle until the goal is satisfied or a bound is reached.
+
+1. **Generate (System 1).** The LLM proposes the next reasoning step, conditioned on the
+   query and the current working-memory state. Output is forced into a structured form by a
+   *constrained decoder* so that the step is machine-parseable rather than free text.
+2. **Translate.** The structured step is mapped by a translation layer into a symbolic
+   representation — a `logic_form` plus typed predicates — that the controller can check.
+   Steps that cannot be translated are handled explicitly (see below) rather than silently
+   accepted.
+3. **Controller update (System 2).** The candidate step is placed in the Imaginal buffer.
+   Matching production rules are identified, and exactly one is selected by a deterministic
+   conflict-resolution policy (priority → specificity → recency), keeping the cycle
+   reproducible under a single seed.
+4. **Validate.** The selected rule(s) and the verification layers (Section V) decide the
+   step's fate:
+   - **Accept** — the conclusion is appended to Declarative Memory and the relevant
+     sub-goal is advanced.
+   - **Reject → Repair** — control enters a bounded *repair sub-loop*: the LLM is
+     re-prompted with the violation reason and asked to produce a corrected step. Repair is
+     attempted up to a fixed bound `R`; if it is still rejected, the step is recorded as a
+     repair failure and the cycle terminates with a diagnostic outcome rather than emitting
+     an unverified answer.
+
+**Termination semantics.** A query terminates when (a) the goal is satisfied (success),
+(b) the per-query cycle bound `C` is exhausted (incomplete), or (c) a repair sub-loop
+exhausts `R` attempts (repair failure). Both bounds are enforced so the loop provably halts.
+Every accept, reject, repair, and termination event is journaled into an append-only
+**proof trace** with per-step latency, which is the single source of truth for the metrics
+in Section VI and the visualizations exported as Mermaid/Graphviz.
+
+**Reproducibility.** All stochastic operations draw from one seeded generator, and the
+conflict-resolution policy is deterministic. Given the same seed, backend, and inputs, a run
+reproduces bit-for-bit (modulo backend nondeterminism, which we isolate by also supporting a
+deterministic mock backend for tests).
+
+---
+
+## V. Three-Layer Verification Framework
+
+We organize step validation as three layers of **increasing semantic depth**. Each layer
+answers a strictly harder question than the one before it.
+
+| Layer | Question it answers | What it checks | Example rejection |
+|-------|--------------------|----------------|-------------------|
+| **Structural** | *Is the reasoning step well-formed?* | The step parses into a valid symbolic representation with the required predicate structure. | A step that is not valid structured output, or whose `logic_form` is missing. |
+| **Arithmetic** | *Is the computation correct?* | Equations in the step are evaluated by a safe expression evaluator; the asserted result must match the computed result within tolerance. | `40 * 13 = 540` (true value 520) is rejected and repaired. |
+| **Goal-aligned** | *Is the computation solving the intended objective?* | The operation implied by the goal (e.g. "profit" ⇒ subtraction) must be present in the step's expression; a step that is arithmetically valid but does not perform the goal-required operation is rejected. | Goal = *find profit*; step computes total cost `40 * 13 = 520`. The math is correct, but the goal operation (subtraction) is absent ⇒ goal mismatch. |
+
+The progression is the conceptual core of the system. **Structural** validation is the
+floor every neuro-symbolic system needs. **Arithmetic** validation is what most
+verification work targets. **Goal-aligned** validation is the novel contribution: it moves
+the controller from reasoning about *numbers* to reasoning about *intent*. A step can pass
+both lower layers and still be wrong because it answers a different question than the one
+posed — exactly the failure documented in Section IX.
+
+Our current goal-aligned layer is a conservative, final-answer-targeted heuristic: it infers
+the goal operation from query keywords (profit/left ⇒ subtract, total ⇒ add, each/per ⇒
+divide, product/times ⇒ multiply) and rejects only when the goal-required operation is
+*entirely absent* from the step's expression. This is deliberately conservative to avoid
+false rejections; per-sub-goal alignment is left to future work (Section XI).
+
+---
+
+## VI. Experimental Setup
+
+**Model and runtime.** System 1 is the open-weights **Qwen3-8B** model served locally via
+**Ollama**, with no hosted-API dependency. A deterministic **mock backend** is used for the
+test suite so that all ~650 unit and property-based tests run offline and reproducibly. All
+reported model results use the real Qwen3-8B backend.
+
+**Benchmark.** We evaluate on **GSM8K**, a standard grade-school math word-problem benchmark
+that stresses exactly the abilities the architecture targets: multi-step arithmetic
+reasoning, intermediate-state tracking, and goal decomposition. Final answers are scored
+with numeric/lenient matching to avoid penalizing formatting differences. **[PLACEHOLDER —
+official GSM8K subset size: 50–100 problems.]**
+
+**Metrics.** All metrics are derived from the proof trace:
+- **Accuracy** — fraction of problems whose final answer matches ground truth.
+- **Faithfulness** — a step-level score capturing whether the emitted reasoning trace is the
+  one actually validated and used to reach the answer (verifiable trace vs. none).
+- **Repair rate** — fraction of steps that were rejected and entered the repair sub-loop,
+  with repair-success and repair-failure broken out.
+- **Goal-validation trigger rate** — fraction of steps at which the goal-aligned layer
+  fired (report-only, counted once per step).
+- **Rule utilization** — distribution over which production rules fired, exposing what the
+  controller actually does.
+- **Latency overhead** — wall-clock cost of verification relative to the plain-LLM baseline.
+
+**Reproducibility.** A single seed governs all stochastic operations; the conflict-
+resolution policy is deterministic; configuration and seed are persisted with each run.
+
+---
+
+## VII. Ablation Study
+
+To isolate each component's contribution, we evaluate the same GSM8K subset under five
+configurations of increasing capability:
+
+| Config | Description | Structural | Arithmetic | Goal-aligned | Repair |
+|--------|-------------|:----------:|:----------:|:------------:|:------:|
+| **A** | Plain LLM (single-shot answer) | — | — | — | — |
+| **B** | LLM + constrained decoding only | ✓ | — | — | — |
+| **C** | LLM + ACT-R controller, no validation | ✓ | — | — | — |
+| **D** | Full neuro-symbolic (structural + arithmetic) | ✓ | ✓ | — | ✓ |
+| **E** | Full + goal-aligned semantic validation | ✓ | ✓ | ✓ | ✓ |
+
+This design answers *why each component exists* rather than only reporting the final
+system's score. Comparing A→B isolates the cost of structure; B→C the value of stateful
+multi-step control; C→D the value of in-loop verification and repair; D→E the marginal value
+of intent-level checking.
+
+**A note on configuration B.** In our implementation, constrained decoding *alone* forces a
+single structured equation and cannot represent iterative multi-step reasoning. On
+GSM8K-style problems this is **insufficient**, not "bad": the constraint is correct but the
+single-shot structure cannot express the decomposition the task requires. The ACT-R
+controller (C and beyond) is what restores multi-step capability, and validation (D, E) is
+what makes the resulting steps verifiable. We report B's low score with this framing
+explicitly to avoid mischaracterizing constrained decoding.
+
+---
+
+## VIII. Results
+
+> **[PLACEHOLDER — official GSM8K headline table.]** The official 50–100 problem run is
+> pending; the table below will report Accuracy, Faithfulness, Repair rate (success/failure),
+> Goal-validation trigger rate, Rule utilization, and Latency overhead for configurations
+> A–E. The numbers in this section from the 30-problem original sample are **preliminary** and
+> labelled as such.
+
+**Preliminary observations (30-problem original sample, Qwen3-8B).**
+- **Accuracy ≈ 96.7%** on the full neuro-symbolic configuration.
+- **97 reasoning steps**, all **accepted on first pass**; **0 repairs fired** on this sample.
+- **Faithfulness = 1.0** for the verifying configurations vs. **0.0** for the plain-LLM
+  baseline, which emits no verifiable trace. This is the clearest preliminary signal: the
+  contribution is observability, not raw accuracy.
+
+The zero-repair result on this small, relatively easy sample is itself informative: it tells
+us the sample does not stress the repair mechanism, which is precisely why the official
+GSM8K run (with harder, longer problems) is the necessary next measurement. We explicitly do
+**not** claim a measured hallucination reduction from this sample; we claim a *mechanism* for
+detecting and repairing verifiable errors, plus a verifiable trace the baseline lacks.
+
+---
+
+## IX. Failure Analysis
+
+The goal-aligned layer was not designed in the abstract; it was motivated by a concrete
+failure observed during evaluation. On a profit problem, the model produced a step that was
+**structurally valid** and **arithmetically correct** — it computed a total cost,
+`40 * 13 = 520` — and the arithmetic validator accepted it because the multiplication was
+genuinely correct. Yet the answer was wrong: the question asked for *profit*, which requires
+subtracting cost from revenue (the correct answer was `380`). The model had computed a
+correct number for the *wrong quantity*.
+
+This is the canonical case that arithmetic checking cannot catch: **a mathematically correct
+but semantically misaligned step**. It exposes the ceiling of number-level verification and
+directly motivated goal-aligned validation, which asks whether the operation the goal
+requires (here, subtraction) is present at all. With the goal-aligned layer enabled, the
+`40 * 13 = 520` step is rejected as a goal mismatch, repaired, and the corrected step reaches
+`380`.
+
+We note an honesty caveat: because System 1 is stochastic, a given model may decompose this
+same problem correctly on another run (in one real-model check, Qwen3-8B did). The
+deterministic reproduction of the failure is therefore demonstrated with a fixed-script
+backend, and the *benefit* of the goal-aligned layer at the population level is exactly what
+the larger official run is needed to quantify. The value of this section is that it shows the
+design is *failure-driven*: each verification layer exists because a real, observed error
+demanded it.
+
+---
+
+## X. Limitations
+
+- **Sample size.** Headline numbers to date come from small samples (30 problems / 4-problem
+  ablation). They support claims about *mechanism and faithfulness*, not about effect size.
+  Confidence intervals and significance require the pending 50–100 problem run.
+- **Goal-alignment scope.** The goal-aligned layer is currently a conservative,
+  final-answer-targeted keyword heuristic. It can miss intent errors in intermediate
+  sub-goals and is limited to the operation vocabulary it recognizes. It is tuned to avoid
+  false rejections, so it under-fires rather than over-fires.
+- **Verifiable error classes only.** The system reduces hallucinations it can *check*
+  (structural, arithmetic, goal-operation). It has no ground-truth world knowledge, so a
+  fluent false premise that passes all three layers is not caught. We do not claim general
+  hallucination elimination.
+- **Constrained-decoding caveat.** Configuration B's weakness is a property of single-shot
+  structured decoding on multi-step tasks, not evidence that constrained decoding is
+  generally harmful.
+- **Domain.** Evaluation is on arithmetic word problems. Generalization to commonsense and
+  multi-hop relational reasoning is future work.
+
+---
+
+## XI. Future Work
+
+- **Per-sub-goal goal alignment.** Extend intent checking from the final answer to each
+  intermediate sub-goal, so misaligned steps are caught mid-trace rather than only at the
+  end. This is the highest-value extension of the novel layer.
+- **Multi-hop relational reasoning.** Apply the controller to relational/transitivity
+  problems (e.g. kinship, ordering), where ACT-R's stateful buffers and production rules are
+  expected to shine.
+- **Richer symbolic checking.** Integrate an SMT solver or a constraint engine for
+  verification beyond arithmetic equality.
+- **Learned-rule analysis at scale.** The adaptive rule learner induces, corroborates, and
+  promotes production rules from accepted steps; a larger run enables study of which learned
+  rules generalize and how learned-vs-seeded rules divide the workload.
+- **Vector-backed declarative memory** and **multi-agent / tool-augmented** variants, once
+  the core evidence base is established.
+
+We deliberately *defer* these until the official benchmark numbers are collected; the
+immediate research priority is evidence, not additional architecture.
+
+---
+
+## XII. Conclusion
+
+We presented a neuro-symbolic reasoning-control architecture that wraps an LLM in an
+ACT-R-style symbolic controller and validates every intermediate reasoning step *before* it
+propagates. The system's contribution is not better language modeling but **traceable,
+verifiable, and repairable** reasoning: a machine-checkable proof trace, a quantified
+faithfulness signal, and an in-loop repair mechanism. Its conceptual core is a **three-layer
+verification framework** of increasing semantic depth — structural, arithmetic, and the
+novel goal-aligned layer that checks whether a step serves the intended objective rather than
+merely computing a correct number. A documented failure — a mathematically correct but
+semantically misaligned step — grounds the design in an observed need. Preliminary results
+show high faithfulness for the verifying configurations against a zero-faithfulness plain-LLM
+baseline; quantifying repair rate, goal-trigger rate, and rule utilization at scale on the
+official GSM8K benchmark is the immediate next step. The result is a reasoning system whose
+every step can be observed, checked, and corrected — a foundation for trustworthy multi-step
+reasoning rather than a claim of superhuman accuracy.
+
+---
+
+## References
+
+> **[PLACEHOLDER — references to be finalized.]** Key works to cite: Kahneman (System 1/2);
+> Anderson et al. (ACT-R); Wei et al. (Chain-of-Thought); Wang et al. (Self-Consistency);
+> Yao et al. (Tree-of-Thoughts); Yao et al. (ReAct); Madaan et al. (Self-Refine);
+> Cobbe et al. (GSM8K).
